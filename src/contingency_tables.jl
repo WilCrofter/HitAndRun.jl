@@ -1,28 +1,53 @@
-""" Generating contingency tables.
+
+#= Generating contingency tables.
+
+=#
+
+""" choose2(m::Int)
+Return a  uniformly random pair of distinct integers from {1,...,m}.    
 """
-
-""" Model
-
-A Mamba model has 3 node types, Stochastic, Logical, and Input, which are natural to a Bayesian network, but somewhat unnatural to an ensemble of contingency tables with specified row and column sums. The shoe fits, however.
-
-Input consists of everything fixed. In this case, input would be the initial table.
-
-Logical nodes are deterministic functions of other nodes. In the present case these would be table entries.
-
-Stochastic nodes would be 2x2 subtables, i.e., 2 row indices and 2 column indices, along with a random upper left entry. 
+function choose2(m::Int)
+    m > 1 || error("m must exceed 1.");
+    a = rand(1:m);
+    b = rand(2:m);
+    return [a, b == a ? 1 : b];
+end
 
 """
+Given a 2x2 table, return another with the same row and column sums as chosen by a hypergeometric distribution on the 1,1 entry.
+"""
+function h_sub(T::Array{Int,2})
+    ns = sum(T[1,:]); # "successes"
+    nf = sum(T[2,:]); # "failures" 
+    draws = sum(T[:,1]); # 1st column represents number of draws
+    #  draw from the associated hypergeometric
+    a11 = rand(Distributions.Hypergeometric(ns,nf,draws));
+    a12 = ns - a11;
+    a21 = draws-a11;
+    a22 = sum(T[:,2])-a12;
+    return reshape([a11,a21,a12,a22],(2,2));
+end
 
 """
-Return an initialized model, given an initial contingency table
+Given a 2x2 table, return another with the same row and column sums as chosen by a uniform distribution on the 1,1 entry.
 """
-function contingency_table_model(T::Array{Int,2})
-    rows, cols = size(T);
-    rowsums = sum(T,2);
-    colsums = sum(T,1);
-    model = Model(
-                  
-                  );
+function u_sub(T::Array{Int, 2})
+    s1, s2 = sum(T,2); # row sums
+    t1, t2 = sum(T,1); # column sums
+    lb = max(s1-t2,0); # lower bound for 1,1 entry
+    ub = min(s1,t1); # upper bound for 1,1 entry
+    a = rand(Distributions.DiscreteUniform(lb, ub));
+    return reshape([a, t1-a, s1-a, t2-(s1-a)],(2,2));
+end
+
+"""
+Given a contingency table, T, replace a random 2x2 subtable using the default uniform distribution or the optional hypergeometric.
+"""
+function step!(T::Array{Int,2}, uniform=true)
+    n, m = size(T);
+    i = choose2(n);
+    j = choose2(m);
+    T[i,j] = uniform ? u_sub(T[i,j]) : h_sub(T[i,j]);
 end
 
 
