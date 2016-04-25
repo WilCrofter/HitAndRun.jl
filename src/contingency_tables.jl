@@ -45,8 +45,10 @@ Given a contingency table, T, replace a random 2x2 subtable using the default un
 """
 function step!(T::Array{Int,2}, uniform=true)
     n, m = size(T);
+    # Generate index i,j
     i = choose2(n);
     j = choose2(m);
+    # Generate new table given i,j
     T[i,j] = uniform ? u_sub(T[i,j]) : h_sub(T[i,j]);
 end
 
