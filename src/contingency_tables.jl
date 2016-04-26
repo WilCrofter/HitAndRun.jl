@@ -4,16 +4,16 @@
 =#
 
 """ choose2(m::Int)
-Return a  uniformly random pair of distinct integers from {1,...,m}.    
+Return a sorted, uniformly random pair of distinct integers from {1,...,m}.    
 """
 function choose2(m::Int)
     m > 1 || error("m must exceed 1.");
     a = rand(1:m);
     b = rand(2:m);
-    return [a, b == a ? 1 : b];
+    return sort([a, b == a ? 1 : b]);
 end
 
-"""
+""" function h_sub(T::Array{Int,2})
 Given a 2x2 table, return another with the same row and column sums as chosen by a hypergeometric distribution on the 1,1 entry.
 """
 function h_sub(T::Array{Int,2})
@@ -40,7 +40,7 @@ function u_sub(T::Array{Int, 2})
     return reshape([a, t1-a, s1-a, t2-(s1-a)],(2,2));
 end
 
-"""
+""" step!(T::Array{Int,2}, uniform=true)
 Given a contingency table, T, replace a random 2x2 subtable using the default uniform distribution or the optional hypergeometric.
 """
 function step!(T::Array{Int,2}, uniform=true)
@@ -52,7 +52,26 @@ function step!(T::Array{Int,2}, uniform=true)
     T[i,j] = uniform ? u_sub(T[i,j]) : h_sub(T[i,j]);
 end
 
-
+""" mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int, uniform=true)
+Using `T` as the initial state, step `burnin` times without saving, then save every `thin` times thereafter until a total of `iterations` steps have been taken. Return a 3D array of size(T) by the number of saved states.     
+"""
+function mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int, uniform=true)
+    state = deepcopy(T);
+    I, J = size(state);
+    N = length((burnin+1):thin:iterations);
+    println(N)
+    record = zeros(Int,(I,J,N));
+    k = 0;
+    for i in 1:iterations
+        step!(state, uniform);
+        if i > burnin && mod(i,thin)==0
+            k += 1;
+            record[:,:,k] = state;
+        end
+    end
+    return record;
+end
+    
 """ snee
 
 Contingency table, eye color (row) vs hair color (column), from Snee, Graphical display of two-way contingency tables. Amer. Statist. 38 9᎐12. (1974)
