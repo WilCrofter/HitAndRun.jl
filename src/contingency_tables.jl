@@ -52,26 +52,29 @@ function step!(T::Array{Int,2}, uniform=true)
     T[i,j] = uniform ? u_sub(T[i,j]) : h_sub(T[i,j]);
 end
 
-""" mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int, uniform=true)
-Using `T` as the initial state, step `burnin` times without saving, then save every `thin` times thereafter until a total of `iterations` steps have been taken. Return a 3D array of size(T) by the number of saved states.     
+""" mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int; uniform::Bool=true, name::AbstractString="T")
+Using `T` as the initial state, step `burnin` times without saving, then save every `thin` times thereafter until a total of `iterations` steps have been taken. Return an object of type Mamba.Chains.
 """
-function mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int, uniform=true)
+function mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int; uniform::Bool=true, name::AbstractString="T")
     state = deepcopy(T);
     I, J = size(state);
-    N = length((burnin+1):thin:iterations);
-    println(N)
-    record = zeros(Int,(I,J,N));
+    N = length((burnin+thin):thin:iterations);
+    record = zeros(Int,(N, I*J));
     k = 0;
     for i in 1:iterations
         step!(state, uniform);
         if i > burnin && mod(i,thin)==0
             k += 1;
-            record[:,:,k] = state;
+            record[k,:] = state;
         end
     end
-    return record;
+    return Mamba.Chains(record;
+                        start=burnin+thin,
+                        thin=thin,
+                        names=make_names(name,(I,J))
+                        );
 end
-    
+
 """ snee
 
 Contingency table, eye color (row) vs hair color (column), from Snee, Graphical display of two-way contingency tables. Amer. Statist. 38 9᎐12. (1974)
