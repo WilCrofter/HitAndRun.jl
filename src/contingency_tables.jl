@@ -41,9 +41,9 @@ function u_sub(T::Array{Int, 2})
 end
 
 """ step!(T::Array{Int,2}, uniform=true)
-Given a contingency table, T, replace a random 2x2 subtable using the default uniform distribution or the optional hypergeometric.
+Given a contingency table, T, replace a random 2x2 subtable using the default hypergeometric distribution or the optional uniform.
 """
-function step!(T::Array{Int,2}, uniform=true)
+function step!(T::Array{Int,2}, uniform=false)
     n, m = size(T);
     # Generate index i,j
     i = choose2(n);
@@ -71,6 +71,11 @@ function mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int; u
     return record;
 end
 
+
+""" tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::AbstractString="T")
+    
+Convert an I,J,K array of IxJ contingency tables to an object, C, of type Mamba.Chains in which C.value[K,:] contains the entries of table K, reshaped to a vector.
+"""
 function tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::AbstractString="T")
     I,J,N = size(record);
     return Mamba.Chains(reshape(record, (I*J, N))',
@@ -78,6 +83,30 @@ function tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::Abstr
                         thin=thin,
                         names=make_names(name,(I,J))
                         );
+end
+
+"""  chisq_table(T::Array{Int,2})
+Compute Pearson's chi-squared statistic for the given, IxJ, contingency table. Under the null hypothesis, that entries in each column represent independent draws from a distribution common to all columns, the statistic should be approximately chi-squared with (I-1)\*(J-1) degrees of freedom.
+"""    
+function chisq_table(T::Array{Int,2})
+    ex = sum(T,2)*sum(T,1)/sum(T); # expectations under H0, independence
+    return sum((T-ex).^2 ./ ex); 
+end
+
+"""
+If the argument is an IxJxK array, the statistic will be computed for each IxJ table in the array.    
+"""    
+function chisq_table(record::Array{Int, 3})
+    return [chisq_table(record[:,:,n] for n in size(record,3))];
+end
+
+"""
+Computes the p-values for an IxJxK array of IxJ contingency tables.
+"""    
+function pval_table(record::Array{Int,3})
+    I,J,K = dim(record);
+    d = Distributions.Chisq((I-1)*(J-1));
+    return [1.0-cdf(d,x) for x in chisq_table(record)];
 end
 
 """ snee
