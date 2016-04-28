@@ -53,22 +53,27 @@ function step!(T::Array{Int,2}, uniform=true)
 end
 
 """ mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int; uniform::Bool=true, name::AbstractString="T")
-Using `T` as the initial state, step `burnin` times without saving, then save every `thin` times thereafter until a total of `iterations` steps have been taken. Return an object of type Mamba.Chains.
+Using `T` as the initial state, step `burnin` times without saving, then save every `thin` times thereafter until a total of `iterations` steps have been taken. Return an size(T) by N array of samples, where N is length((burnin+thin):thin:iterations).
 """
 function mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int; uniform::Bool=true, name::AbstractString="T")
     state = deepcopy(T);
     I, J = size(state);
     N = length((burnin+thin):thin:iterations);
-    record = zeros(Int,(N, I*J));
+    record = zeros(Int,(I,J,N));
     k = 0;
     for i in 1:iterations
         step!(state, uniform);
         if i > burnin && mod(i,thin)==0
             k += 1;
-            record[k,:] = state;
+            record[:,:,k] = state;
         end
     end
-    return Mamba.Chains(record;
+    return record;
+end
+
+function tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::AbstractString="T")
+    I,J,N = size(record);
+    return Mamba.Chains(reshape(record, (I*J, N))',
                         start=burnin+thin,
                         thin=thin,
                         names=make_names(name,(I,J))
