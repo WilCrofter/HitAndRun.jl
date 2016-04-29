@@ -85,10 +85,10 @@ function tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::Abstr
                         );
 end
 
-"""  chisq_table(T::Array{Int,2})
-Compute Pearson's chi-squared statistic for the given, IxJ, contingency table. Under the null hypothesis, that entries in each column represent independent draws from a distribution common to all columns, the statistic should be approximately chi-squared with (I-1)\*(J-1) degrees of freedom.
+"""  chisq_tables(T::Array{Int,2})
+Compute Pearson's chi-squared statistic for the given, IxJ, contingency table. Under the null hypothesis, that entries in each column represent independent draws from a distribution common to all columns, the statistic should be approximately chi-squared with (I-1)(J-1) degrees of freedom.
 """    
-function chisq_table(T::Array{Int,2})
+function chisq_tables(T::Array{Int,2})
     ex = sum(T,2)*sum(T,1)/sum(T); # expectations under H0, independence
     return sum((T-ex).^2 ./ ex); 
 end
@@ -96,18 +96,10 @@ end
 """
 If the argument is an IxJxK array, the statistic will be computed for each IxJ table in the array.    
 """    
-function chisq_table(record::Array{Int, 3})
-    return [chisq_table(record[:,:,n] for n in size(record,3))];
+function chisq_tables(record::Array{Int, 3})
+    return [chisq_tables(record[:,:,n]) for n in 1:size(record,3)];
 end
 
-"""
-Computes the p-values for an IxJxK array of IxJ contingency tables.
-"""    
-function pval_table(record::Array{Int,3})
-    I,J,K = dim(record);
-    d = Distributions.Chisq((I-1)*(J-1));
-    return [1.0-cdf(d,x) for x in chisq_table(record)];
-end
 
 """ snee
 
@@ -123,6 +115,14 @@ snee = [68 119 26 7;
         20 84 71 94;
         15 54 14 10;
         5  29 14 16];
+
+""" near_random
+A contingency table with the same row and column sums as snee, whose entries are close to their expectations.
+"""
+near_random = [38 96 43 43;
+               45 119 52 53;
+               16 41 18 18;
+               11 28 12 13];
 
 """ victorians
 
