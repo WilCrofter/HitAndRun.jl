@@ -74,9 +74,9 @@ end
 
 """ tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::AbstractString="T")
     
-Convert an I,J,K array of IxJ contingency tables to an object, C, of type Mamba.Chains in which C.value[K,:] contains the entries of table K, reshaped to a vector.
+Convert an I,J,K array of IxJ contingency tables to an object, C, of type Mamba.Chains in which C.value[K,:,1] contains the entries of table K, reshaped to a vector.
 """
-function tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::AbstractString="T")
+function tables2chains{U <: Real}(record::Array{U,3}, burnin::Int, thin::Int; name::AbstractString="T")
     I,J,N = size(record);
     return Mamba.Chains(reshape(record, (I*J, N))',
                         start=burnin+thin,
@@ -84,6 +84,28 @@ function tables2chains(record::Array{Int,3}, burnin::Int, thin::Int; name::Abstr
                         names=make_names(name,(I,J))
                         );
 end
+
+"""
+If `record` is IxK, convert to an object, C,  of type Mamba.Chains where C.value is KxIx1.     
+"""    
+function  tables2chains{U <: Real}(record::Array{U,2}, burnin::Int, thin::Int; name::AbstractString="T")
+    I, K = size(record);
+    return Mamba.Chains(record',
+                        start=burnin+thin,
+                        thin=thin,
+                        names=make_names(name,(I,K)));
+end
+
+"""
+If `record` is a vector of length K, convert to an object, C, of type Mamba.Chains where C.value is Kx1x1.
+"""    
+function  tables2chains{U <: Real}(record::Array{U,1}, burnin::Int, thin::Int; name::AbstractString="T")
+    K = size(record,1);
+    return Mamba.Chains(reshape(record, (K,1)),
+                        start=burnin+thin,
+                        thin=thin,
+                        names=[name]);
+end                        
 
 """  chisq_tables(T::Array{Int,2})
 Compute Pearson's chi-squared statistic for the given, IxJ, contingency table. Under the null hypothesis, that entries in each column represent independent draws from a distribution common to all columns, the statistic should be approximately chi-squared with (I-1)(J-1) degrees of freedom.
@@ -119,10 +141,10 @@ snee = [68 119 26 7;
 """ near_random
 A contingency table with the same row and column sums as snee, whose entries are close to their expectations.
 """
-near_random = [38 96 43 43;
-               45 119 52 53;
-               16 41 18 18;
-               11 28 12 13];
+near_random = [40 106 26 48;
+               39 104 26 46;
+               17  45 11 20;
+               12  31  8 13];
 
 """ victorians
 
