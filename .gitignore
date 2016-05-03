@@ -9,6 +9,8 @@
 *.jl.*.cov
 *.jl.mem
 *.juliahistory
+*.ipynb_checkpoints/*
+examples/*.ipynb_checkpoints/*
 
 data/*
 src/tutorial.jl
