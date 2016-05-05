@@ -64,7 +64,7 @@ function mcmc_tables(T::Array{Int,2}, burnin::Int, thin::Int, iterations::Int; u
     k = 0;
     for i in 1:iterations
         step!(state, uniform);
-        if i > burnin && mod(i,thin)==0
+        if i > burnin && mod(i,thin)==0 && k < N
             k += 1;
             record[:,:,k] = state;
         end
