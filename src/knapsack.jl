@@ -75,7 +75,7 @@ end
 
       
 """
-function mcmc_knapsack{T<:Real}(item_weights::Array{T,1}, max_weight::T, burnin::Int, thin::Int, iterations::Int, initial_state::Array{T,1}=init_knapsack(item_weights,max_weight))
+function mcmc_knapsack{T<:Real}(item_weights::Array{T,1}, max_weight::T, burnin::Int, thin::Int, iterations::Int; initial_state::Array{T,1}=init_knapsack(item_weights,max_weight))
     I = length(item_weights);
     N = length((burnin+thin):thin:iterations);
     record = zeros(T,(N, I+1));
