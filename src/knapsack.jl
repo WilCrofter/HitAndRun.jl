@@ -1,6 +1,8 @@
 #=
 
-Given a vector of positive weights, w=(w_1,...,w_n), and a maximum weight, W, this chain converges to a uniform sampler of binary vectors a=(a_1,...,a_n) such that <a,w) <= W, i.e., to a uniform sampler of feasible solutions (not *optimal* feasible solutions) to a knapsack problem. The algorithm is that of reference [1]. 
+Given a vector of positive weights, w=(w_1,...,w_n), and a maximum weight, W, this chain converges to a uniform sampler of binary vectors a=(a_1,...,a_n) such that <a,w> <= W, i.e., to a uniform sampler of feasible solutions (not *optimal* feasible solutions) to a knapsack problem. The algorithm is that of reference [1].
+
+A knapsack problem per se generally assigns values to items and the problem is to maximize cumulative value subject to the constraint on weight. Values are irrelevan to the objective here, however, which is just to randomly generate knapsack packings which satisfy the weight constraint.
 
 Originally I had thought to combine the algorithms of [1] and [2] in one unit of code, but [1] involves a discrete random walk along the vertices of a truncated cube, while [2] involves a continuous walk in the interior of a convex set (which I thought to specialize to a truncated unit cube.) The diversity of code required argues for separate treatment, so this file implements only the algorithm of [1].
 
