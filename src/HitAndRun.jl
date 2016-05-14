@@ -9,5 +9,6 @@ export init_knapsack, mcmc_knapsack
 include("hrutils.jl")
 include("contingency_tables.jl")
 include("knapsack.jl")
+include("mallow.jl")
 
 end # module
