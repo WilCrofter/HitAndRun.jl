@@ -1,9 +1,9 @@
 
 function step_mallow!{T<:Real}(betarho::Array{T,1}, state::Array{Int,1})
     n = length(state)
-    # u = rand(n) .* exp(beta .* target .* state)  =>
-    # log(u) = log(rand(n)) + beta .* target .* state =>
-    b = (log(rand(n))./ (betarho)) + state 
+    # u = rand(n) .* exp(betarho .* state)  =>
+    # log(u) = log(rand(n)) + betarho .* state =>
+    b = (log(rand(n))./ betarho) + state 
     # Note that state=target will satisfy the suppositions
     # necessary to complete the loop.
     for j in 1:n
@@ -31,9 +31,9 @@ Look at places j with b[j] ≤ 1 and place symbol 1 at a uniform choice among th
 The last sentence is justified as follows
 
 u[j] ≤ exp(β[j]*ρ[j]*σ[j]) =>
-b[j]=log(u[j])/(ρ[j]*β[j]) ≤ σ[j], hence
-b[j] ≤ j for j=1,...,n, hence
-b[i] ≤ j for i=1,...,j.
+b[j]=log(u[j])/(ρ[j]*β[j]) ≤ σ[j],
+Since σ is a permutation of {1,...,n} there are at least k values of i such that σ[i] ≤ k, hence such that b[j] ≤ k. 
+
 
 The two fixed parameters, β and ρ, always appear as a product, hence can be replaced by a single fixed parameter representing the product. This is done internally, but the function signature distinguishes between them, where ρ is called the target.
 
