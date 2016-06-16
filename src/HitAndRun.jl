@@ -11,6 +11,6 @@ include("hrutils.jl")
 include("contingency_tables.jl")
 include("knapsack.jl")
 include("mallow.jl")
-incluce("subsequence_alignment.jl")
+include("subsequence_alignment.jl")
 
 end # module
