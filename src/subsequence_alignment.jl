@@ -33,7 +33,7 @@ proteins = [Symbol(i) for i in split("G P A V L I M C F Y W H K R Q N E D S T")]
 """
 Default variance
 """
-default_variance = 20.0
+default_variance = 10.0
 
 function random_alignment_data(alphabet::Array{Symbol,1}, sequence_length::Int, nr_sequences::Int, deletion_probability::Real; special_symbol=:*)
     A = fill(special_symbol, (nr_sequences, sequence_length))
@@ -97,20 +97,19 @@ function step_alignment!(current_log_score::Float64, A::Array{Symbol, 2}, alphab
     nrows, ncols = size(A)
     nsym = length(alphabet)
     # Pick a row (other than the first) at random
-    rw = rand(2:nrows); println("rw ",rw, " ", A[rw,:])
+    rw = rand(2:nrows)
     # Find the lead positions of each block of special symbols within
     # the row. If there are no such blocks, return
     ss = find_special_pos(A,rw,special_symbol=special_symbol)
     if length(ss) == 0
         return current_log_score
     end
-    println("ss ",ss')
     # Generate the log of uniform random variate on [0,1] and add the current
     # log score. The result is equivalent to the log of a uniform random variate
     # on [0, exp(current_log_score)].
-    logu = log(rand(1))[1]+current_log_score; println("logu ",logu)
+    logu = log(rand(1))[1]+current_log_score
     # Choose a leading special symbol at random in the chosen row.
-    oldpos = rand(ss); println("oldpos ", oldpos)
+    oldpos = rand(ss)
     # Score all distinct re-positionings of this symbol within the row
     #  For convenience, determine symbol counts exclusive of chosen row
     counts = count_symbols(A[ setdiff(1:nrows, rw), :], alphabet)
@@ -119,7 +118,6 @@ function step_alignment!(current_log_score::Float64, A::Array{Symbol, 2}, alphab
     #  alignments. Distinct alignments correspond to lead positions, ss, and
     #  to positions occupied by symbols from the alphabet.
     positions = vcat(ss, find(A[rw,:] .!= special_symbol))
-    println("positions ",positions')
     scores = fill(base_score,length(positions))
     altrow = fill(special_symbol, ncols)
     for i in 1:length(positions)
@@ -138,7 +136,7 @@ function step_alignment!(current_log_score::Float64, A::Array{Symbol, 2}, alphab
             scores[i] = scores[i]- 1 - 2*counts[k,j]
         end
     end
-    scores = scores / (2*variance); println("scores ",scores')
+    scores = scores / (2*variance)
     k = rand(find(scores .>= logu))
     newpos = positions[k]
     newsc  = scores[k]
@@ -151,3 +149,25 @@ function step_alignment!(current_log_score::Float64, A::Array{Symbol, 2}, alphab
     # Return its score
     return newsc
 end
+
+function mcmc_alignment(A::Array{Symbol,2}, alphabet::Array{Symbol,1}, burnin::Int,
+                        thin::Int, iterations::Int;
+                        variance::Float64=default_variance,
+                        special_symbol::Symbol=:* )
+    A = deepcopy(A)
+    sc = log_score_alignment(A, alphabet, variance=variance)
+    n = length(burnin:thin:iterations)
+    scores = fill(0.0,n)
+    alignments = fill(:*, (size(A,1), size(A,2), n))
+    k = 1
+    for t in 1:iterations
+        sc = step_alignment!(sc, A, alphabet, variance=variance, special_symbol=special_symbol)
+        if t >= burnin && (t-burnin)%thin == 0
+            scores[k] = sc
+            alignments[:,:,k] = deepcopy(A)
+            k = k+1
+        end
+    end
+    return scores, alignments
+end
+
